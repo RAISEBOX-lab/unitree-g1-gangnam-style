@@ -127,13 +127,35 @@ pip install --upgrade pip
 
 ### Install Dependencies
 ```bash
-# Install unitree_sdk2_python
+# Install cyclonedds first (needed by SDK)
+pip install 'cyclonedds>=0.10.2'
+
+# Install unitree_sdk2_python (modify setup.py if needed)
 cd _vendor/unitree_sdk2_python
+sed -i 's/cyclonedds==0.10.2/cyclonedds>=0.10.2/' setup.py
 pip install -e .
 
-# Install MuJoCo
+# Install MuJoCo and pygame
+cd ..
 pip install mujoco pygame
+```
+
+### Verification
+```bash
+python3 -c "import unitree_sdk2py; import mujoco; print('All imports successful')"
 ```
 
 ### Next: Set up Mujoco simulation
 See Unit 3 of the course for simulation setup.
+
+---
+
+## Current Status
+
+✅ **Completed:**
+- Git repo initialized
+- Submodules cloned: `unitree_sdk2_python`, `unitree_mujoco`
+- Python venv created (`g1/`)
+- Dependencies installed and verified
+
+📋 **Next:** Unit 3 - Unitree SDK exercises
