@@ -1,0 +1,11 @@
+# Build artifacts
+build/
+*.log
+*.pyc
+__pycache__/
+
+# Third-party repos - only track source, not builds
+unitree_mujoco/simulate/build/
+unitree_mujoco_tc/simulate/build/
+unitree_rl_gym/deploy/deploy_mujoco/*.log
+unitree_rl_gym/*.log
