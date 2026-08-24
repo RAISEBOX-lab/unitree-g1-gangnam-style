@@ -1,0 +1,68 @@
+flowchart TD
+    subgraph User["User"]
+        CLI[CLI: example_use_lococlient_simversion_v2.py]
+    end
+
+    subgraph DDS["DDS Communication Layer"]
+        SPORT_P["sport API (request/response)"]
+        LOWCMD_P["rt/lowcmd (publisher)"]
+        LOWSTATE_S["rt/lowstate (subscriber)"]
+    end
+
+    subgraph PythonApp["Python Application Layer"]
+        LOC[LocoClient<br/>g1_loco_client.py]
+        POL[Policy Script<br/>policy_to_lowcmd_v11b...]
+    end
+
+    subgraph Simulation["MuJoCo Simulation"]
+        BRIDGE[UnitreeSdk2Bridge<br/>DDS ↔ MuJoCo]
+        MUJ[MuJoCo<br/>Physics Engine]
+    end
+
+    %% User sends FSM command
+    CLI -->|SetFsmId(500)| LOC
+
+    %% LocoClient sends via RPC
+    LOC -->|RPC Request| SPORT_P
+
+    %% Policy receives RPC
+    SPORT_P -->|Subscribe| POL
+
+    %% Policy processes FSM command
+    POL -->|FSM=500 → MODE_AI| POL
+
+    %% Policy starts warmup then computes actions
+    POL -->|Every 2.5ms| POL
+
+    %% Policy publishes motor commands
+    POL -->|rt/lowcmd| LOWCMD_P
+
+    %% Bridge receives motor commands
+    LOWCMD_P -->|Subscribe| BRIDGE
+
+    %% Bridge applies to MuJoCo
+    BRIDGE -->|Motor commands| MUJ
+
+    %% MuJoCo simulates physics
+    MUJ -->|State update| MUJ
+
+    %% Bridge reads state
+    MUJ -->|Joint states| BRIDGE
+
+    %% Bridge publishes state feedback
+    BRIDGE -->|rt/lowstate| LOWSTATE_S
+
+    %% Policy receives state
+    LOWSTATE_S -->|Subscribe| POL
+
+    %% Policy uses state for next action
+    POL -.->|q, dq, omega| POL
+
+    style CLI fill:#fff9c4
+    style LOC fill:#bbdefb
+    style POL fill:#f8bbd0
+    style BRIDGE fill:#c8e6c9
+    style MUJ fill:#c8e6c9
+    style SPORT_P fill:#e0e0e0
+    style LOWCMD_P fill:#e0e0e0
+    style LOWSTATE_S fill:#e0e0e0

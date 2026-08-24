@@ -1,0 +1,42 @@
+flowchart TD
+    subgraph Origins["rt/lowcmd Origins (Publishers)"]
+        POL[Policy Script<br/>policy_to_lowcmd_v11b...]
+        POS[G1 Poses Script<br/>g1_poses.py]
+        LL[Low Level Example<br/>g1_low_level_example.py]
+        BRIDGE[Arm SDK Bridge<br/>arm_sdk_bridge.py]
+    end
+
+    subgraph DDS["DDS Communication"]
+        PUB[ChannelPublisher<br/>rt/lowcmd]
+        SUB[ChannelSubscriber<br/>rt/lowcmd]
+    end
+
+    subgraph Simulation["MuJoCo Simulation"]
+        BRIDGE[UnitreeSdk2Bridge<br/>on LowCmd receive]
+        MUJ[MuJoCo<br/>Physics Engine]
+    end
+
+    %% Current active path
+    POL -.->|Currently Running| PUB
+
+    %% Alternative paths (not running)
+    POS -.->|Not Running| PUB
+    LL -.->|Not Running| PUB
+    BRIDGE -.->|Not Running| PUB
+
+    %% Main flow
+    PUB -->|DDS Message| SUB
+    SUB -->|Receive| BRIDGE
+    BRIDGE -->|Apply Motor Commands| MUJ
+    MUJ -->|Physics Step| MUJ
+
+    %% State feedback
+    MUJ -->|State| BRIDGE
+    BRIDGE -->|rt/lowstate| SUB2[rt/lowstate Subscriber]
+    SUB2 -.->|State Data| POL
+
+    style POL fill:#f8bbd0
+    style PUB fill:#e0e0e0
+    style BRIDGE fill:#c8e6c9
+    style MUJ fill:#c8e6c9
+    style SUB fill:#e0e0e0

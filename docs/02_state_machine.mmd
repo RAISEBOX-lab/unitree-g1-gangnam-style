@@ -1,0 +1,42 @@
+stateDiagram-v2
+    [*] --> ZeroTorque
+    ZeroTorque --> Damping: User Command
+    Damping --> LockedStanding: User Command
+    LockedStanding --> PreWalk: User Command
+    PreWalk --> WalkMotion: Balance Enabled
+    WalkMotion --> PreWalk: Disable Balance
+    PreWalk --> LockedStanding: User Command
+    LockedStanding --> Damping: User Command
+    Damping --> ZeroTorque: User Command
+    WalkMotion --> [*]: Emergency Stop
+    ZeroTorque --> [*]: Robot Falls
+
+    note right of ZeroTorque
+        FSM ID: 0
+        Risk: DANGEROUS
+        Robot falls, no resistance
+    end note
+
+    note right of Damping
+        FSM ID: 1
+        Risk: Safe
+        Joints have resistance
+    end note
+
+    note right of LockedStanding
+        FSM ID: 2
+        Risk: Safe
+        Robot locked in place
+    end note
+
+    note right of PreWalk
+        FSM ID: 4
+        Risk: Safe
+        Preparing for motion
+    end note
+
+    note right of WalkMotion
+        FSM ID: 500/801
+        Risk: Balance enabled
+        AI walking policy active
+    end note

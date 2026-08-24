@@ -1,0 +1,27 @@
+graph LR
+    subgraph "Development Machine"
+        APP[Python Application]
+        DDS[DDS Middleware<br/>CycloneDDS]
+    end
+
+    subgraph "Network"
+        ETH[Ethernet/WiFi]
+    end
+
+    subgraph "Robot PC2 (192.168.123.164)"
+        ROBD[Robot Daemon]
+    end
+
+    subgraph "Simulation Mode"
+        SIM[MuJoCo<br/>Loopback Interface]
+    end
+
+    APP -->|Domain ID: 1| DDS
+    DDS -->|lo (localhost)| SIM
+    DDS -->|eth0/wlan0| ETH
+    ETH -->|192.168.123.164| ROBD
+
+    style APP fill:#e1f5ff
+    style DDS fill:#f0f0f0
+    style SIM fill:#e8f5e9
+    style ROBD fill:#e8f5e9

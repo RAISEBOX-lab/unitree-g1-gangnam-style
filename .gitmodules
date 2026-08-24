@@ -1,6 +1,16 @@
 [submodule "_vendor/unitree_sdk2_python"]
 	path = _vendor/unitree_sdk2_python
-	url = https://github.com/unitreerobotics/unitree_sdk2_python.git
+	url = https://github.com/RAISEBOX-lab/unitree_sdk2_python.git
+	branch = raisebox-fixes
 [submodule "_vendor/unitree_mujoco"]
 	path = _vendor/unitree_mujoco
-	url = https://github.com/unitreerobotics/unitree_mujoco.git
+	url = https://github.com/RAISEBOX-lab/unitree_mujoco.git
+	branch = raisebox-fixes
+[submodule "_vendor/unitree_mujoco_extras"]
+	path = _vendor/unitree_mujoco_extras
+	url = https://github.com/RAISEBOX-lab/unitree_mujoco_extras.git
+	branch = raisebox-fixes
+[submodule "_vendor/unitree_rl_lab"]
+	path = _vendor/unitree_rl_lab
+	url = https://github.com/RAISEBOX-lab/unitree_rl_lab.git
+	branch = raisebox-fixes

@@ -1,0 +1,54 @@
+graph LR
+    subgraph "Publishers"
+        RPC_P[RPC Bridge]
+        SDK_P[SDK Clients]
+    end
+
+    subgraph "DDS Topics"
+        WCT[rt/wirelesscontroller]
+        LOWCMD[rt/lowcmd]
+        ARM_SDK[rt/arm_sdk]
+    end
+
+    subgraph "Subscribers"
+        SIM_S[Simulation]
+        ROBS[Real Robot]
+    end
+
+    subgraph "Publishers (Feedback)"
+        SIM_P[Simulation]
+        ROBP[Real Robot]
+    end
+
+    subgraph "DDS Topics (Feedback)"
+        LOWSTATE[rt/lowstate]
+    end
+
+    subgraph "Subscribers (Feedback)"
+        RPC_S[RPC Bridge]
+        SDK_S[SDK Clients]
+    end
+
+    RPC_P -->|Gamepad Input| WCT
+    SDK_P -->|Motor Commands| LOWCMD
+    SDK_P -->|Arm Commands| ARM_SDK
+
+    WCT --> SIM_S
+    LOWCMD --> SIM_S
+    LOWCMD --> ROBS
+    ARM_SDK --> SIM_S
+
+    SIM_P -->|State Feedback| LOWSTATE
+    ROBP -->|State Feedback| LOWSTATE
+
+    LOWSTATE --> RPC_S
+    LOWSTATE --> SDK_S
+
+    style RPC_P fill:#e1f5ff
+    style SDK_P fill:#e1f5ff
+    style SIM_P fill:#e8f5e9
+    style ROBP fill:#e8f5e9
+    style WCT fill:#f0f0f0
+    style LOWCMD fill:#f0f0f0
+    style ARM_SDK fill:#f0f0f0
+    style LOWSTATE fill:#f0f0f0

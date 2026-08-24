@@ -1,0 +1,31 @@
+graph TD
+    ROOT[project/] --> DOC[docs/]
+    ROOT --> SCRIPT[scripts/]
+    ROOT --> VENDOR[_vendor/]
+    ROOT --> G1[g1/]
+
+    DOC --> STATUS[STATUS_REPORT.md]
+    DOC --> COURSE[Unitree_G1_Reinforcement_Learning_Course/]
+    DOC --> ANALYSIS[official_repo_analysis.md]
+
+    VENDOR --> SDK[unitree_sdk2_python/]
+    VENDOR --> MUJ[unitree_mujoco/]
+    VENDOR --> EXTR[unitree_mujoco_extras/]
+    VENDOR --> COUR[unitree_mujoco_tc/]
+    VENDOR --> RL[unitree_rl_gym/]
+
+    SDK --> EX1[example/g1/]
+    SDK --> LIB[unitree_sdk2py/]
+
+    EXTR --> LAUNCH[launch_unitree_v3.py]
+    EXTR --> RPC[rpc_bridge/]
+
+    RL --> POLICY[deploy/pre_train/g1/]
+    RL --> RES[resources/robots/]
+
+    POLICY --> MOTION[policy/motion.pt]
+    RES --> XML[g1_29dof.xml]
+
+    style DOC fill:#f0f0f0
+    style VENDOR fill:#e8f5e9
+    style G1 fill:#fff4e6
