@@ -1,0 +1,70 @@
+flowchart TD
+    subgraph RPCClient["RPC Client\n(LocoClient / CLI)"]
+        CLI[CLI: SetFsmId(500)]
+        LOC[LocoClient.g1_loco_client]
+    end
+
+    subgraph RPCServer["RPC Bridge\n(loco_rpc_server_bridge.py)"]
+        REQ[RPC Subscriber\nsport API RECV]
+        HANDLER[Request Handler]
+        ACTIONS[Action Methods]
+        STREAM[Stream Thread\n500Hz]
+        PUB[LowCmd Publisher]
+    end
+
+    subgraph DDS["DDS Communication"]
+        RPC_REQ["sport API\nRECV channel"]
+        RPC_RSP["sport API\nSEND channel"]
+        LOWCMD["rt/lowcmd"]
+        LOWSTATE["rt/lowstate"]
+    end
+
+    subgraph Simulation["MuJoCo Simulation"]
+        BRIDGE[UnitreeSdk2Bridge]
+        MUJ[MuJoCo Physics]
+    end
+
+    %% RPC Request Flow
+    CLI -->|SetFsmId(500)| LOC
+    LOC -->|Publish RPC Request| RPC_REQ
+    RPC_REQ -->|Subscribe| REQ
+    REQ -->|Parse| HANDLER
+
+    %% Action Selection
+    HANDLER -->|FSM=500| ACTIONS
+    ACTIONS -->|action_running_mode()| STREAM
+    ACTIONS -->|action_locked_standing()| STREAM
+    ACTIONS -->|action_damp_hold()| STREAM
+    ACTIONS -->|action_zero_torque()| STREAM
+
+    %% Stream Loop
+    STREAM -->|Every 2ms| PUB
+    PUB -->|Publish| LOWCMD
+
+    %% Bridge Receives
+    LOWCMD -->|Subscribe| BRIDGE
+    BRIDGE -->|Apply| MUJ
+
+    %% State Feedback
+    MUJ -->|Physics State| BRIDGE
+    BRIDGE -->|Publish| LOWSTATE
+
+    %% Bridge Subscribes to State
+    LOWSTATE -->|Subscribe| REQ
+    REQ -->|Capture pose| ACTIONS
+
+    %% RPC Response
+    HANDLER -->|Build Response| RPC_RSP
+    RPC_RSP -->|Subscribe| LOC
+    LOC -->|Receive ACK| CLI
+
+    style CLI fill:#fff9c4
+    style LOC fill:#bbdefb
+    style RPCServer fill:#f8bbd0
+    style REQ fill:#e0e0e0
+    style HANDLER fill:#e0e0e0
+    style ACTIONS fill:#e0e0e0
+    style STREAM fill:#e0e0e0
+    style PUB fill:#e0e0e0
+    style BRIDGE fill:#c8e6c9
+    style MUJ fill:#c8e6c9

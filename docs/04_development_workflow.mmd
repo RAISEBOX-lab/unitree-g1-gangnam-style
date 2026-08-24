@@ -1,0 +1,31 @@
+graph TD
+    A[Phase 1: Environment Setup] --> B[Phase 2: SDK Exercises]
+    B --> C[Phase 3: RL Lab]
+    C --> D[Phase 4: Gangnam Style]
+
+    A --> A1[Install Dependencies]
+    A --> A2[Clone Submodules]
+    A --> A3[Test Simulation]
+    A --> A4[Verify RPC Bridge]
+
+    B --> B1[Exercise 1: State Machine]
+    B --> B2[Exercise 2: Low Level]
+    B --> B3[Exercise 3: WirelessController]
+    B --> B4[Exercise 4: G1 Poses]
+    B --> B5[Exercise 5-6: Arm SDK]
+
+    C --> C1[Exercise 7: Sim2Sim]
+    C --> C2[Exercise 8: Policy Deploy]
+    C --> C3[Exercise 9: Custom Motion]
+
+    D --> D1[Design Choreography]
+    D --> D2[Implement Motion Sequences]
+    D --> D3[Test in Simulation]
+    D --> D4[Deploy to Real Robot]
+
+    D3 -.->|Must Pass| D4
+
+    style A fill:#e8f5e9
+    style B fill:#fff4e6
+    style C fill:#fce4ec
+    style D fill:#e1f5ff

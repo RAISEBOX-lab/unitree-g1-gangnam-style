@@ -1,0 +1,89 @@
+flowchart TD
+    subgraph UserInput["User Input"]
+        GP[Gamepad]
+        CLI[CLI Scripts]
+    end
+
+    subgraph PythonApp["Python Application"]
+        FSM[State Machine Manager]
+        RPC[RPC Bridge]
+        LOC[LocoClient<br/>High-Level]
+        LOW[LowLevel Client<br/>Motor Control]
+        POL[RL Policy<br/>motion.pt]
+    end
+
+    subgraph DDS["DDS Layer"]
+        PUB[Publisher]
+        SUB[Subscriber]
+    end
+
+    subgraph Simulation["MuJoCo Simulation"]
+        SIM[MuJoCo<br/>29DOF Model]
+    end
+
+    subgraph StateFeedback["State Feedback"]
+        IMU[IMU State]
+        MOT[Motor States]
+        BMS[BMS State]
+    end
+
+    %% User Input
+    GP -->|Joystick/Buttons| RPC
+    CLI -->|FSM Commands| FSM
+    CLI -->|Motor Commands| LOW
+
+    %% State Machine Control
+    FSM -->|Set FSM ID| RPC
+    FSM -->|Mode Selection| LOC
+
+    %% RPC to Simulation
+    RPC -->|Physics| SIM
+
+    %% SDK to DDS
+    RPC -->|Publish| PUB
+    LOC -->|Publish| PUB
+    LOW -->|rt/lowcmd| PUB
+
+    %% DDS Topics to Simulation
+    PUB -->|rt/wirelesscontroller| SIM
+    PUB -->|rt/lowcmd| SIM
+
+    %% State Feedback from Simulation
+    SIM -->|rt/lowstate| SUB
+
+    %% DDS to Application
+    SUB -->|rt/lowstate| RPC
+    SUB -->|rt/lowstate| LOC
+    SUB -->|rt/lowstate| LOW
+
+    %% State Extraction
+    SUB --> IMU
+    SUB --> MOT
+    SUB --> BMS
+
+    %% Feedback to State Machine
+    IMU -->|Orientation| FSM
+    MOT -->|Joint States| FSM
+    BMS -->|Battery| FSM
+
+    %% RL Policy Integration
+    POL -.->|Actions| RPC
+    POL -.->|Actions| LOC
+
+    %% Styling
+    style UserInput fill:#f5f5f5
+    style PythonApp fill:#e1f5ff
+    style DDS fill:#f0f0f0
+    style Simulation fill:#e8f5e9
+    style StateFeedback fill:#fff4e6
+    style RPC fill:#bbdefb
+    style LOC fill:#bbdefb
+    style LOW fill:#bbdefb
+    style FSM fill:#fff9c4
+    style PUB fill:#e0e0e0
+    style SUB fill:#e0e0e0
+    style SIM fill:#c8e6c9
+    style IMU fill:#ffecb3
+    style MOT fill:#ffecb3
+    style BMS fill:#ffecb3
+    style POL fill:#f8bbd0

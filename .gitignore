@@ -18,3 +18,27 @@ __pycache__/
 
 # Lock file
 *.lock
+
+# Course source document (too large for GitHub)
+*.docx
+.~lock*
+
+# Training artifacts
+logs/
+outputs/
+*.pt
+*.onnx
+*.safetensors
+_vendor/unitree_rl_lab/logs/
+_vendor/unitree_rl_lab/outputs/
+
+# C++ build outputs and unpacked MuJoCo release
+_vendor/**/build/
+_vendor/unitree_mujoco/simulate/mujoco/
+*.tar.gz
+
+# Tool caches
+.opencode/node_modules/
+_vendor/unitree_model/.cache/
+MUJOCO_LOG.TXT
+*.log

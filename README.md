@@ -8,72 +8,33 @@
 ## Project Objective
 Implement Gangnam Style dance choreography on Unitree G1 robot using official course repositories.
 
-## Project Layout
+## Quick Start
 
-```
-/home/raisebox/Projects/unitree-g1-gangnam-style/
-├── _vendor/                     # Course dependencies (DO NOT MODIFY unless fixing)
-│   ├── unitree_sdk2_python/    # Python SDK for DDS communication
-│   ├── unitree_mujoco/          # MuJoCo simulator (29DOF G1)
-│   ├── unitree_mujoco_extras/   # RPC bridge, gamepad controller
-│   ├── unitree_mujoco_tc/       # Course repo (23DOF)
-│   └── unitree_rl_gym/          # RL training/deployment
-├── g1/                          # Python virtual environment (activate with `source g1/bin/activate`)
-├── docs/                        # Analysis documents
-├── scripts/                     # User scripts (exercise implementations)
-├── PROJECT_GUIDELINES.md        # 4-phase workflow
-└── BEHAVIOR.md                  # Interaction guidelines
-```
-
-## Key Constraints
-
-1. **Simulation First** - All work must be verified in MuJoCo before real robot
-2. **Follow Course Order** - Unit 3 (SDK exercises) → Unit 4-5 (RL) → Gangnam Style
-3. **No Unverified Changes** - Propose before executing destructive operations
-4. **Document Everything** - Save analysis outputs as files in `docs/`
-
-## Environment Setup
-
-### Python Environment
 ```bash
-cd /home/raisebox/Projects/unitree-g1-gangnam-style
+# Activate environment
 source g1/bin/activate
+
+# Launch simulation
+cd _vendor/unitree_mujoco_extras && python3 launch_unitree_v3.py
 ```
 
-### Launch Simulation
+See [`PROJECT_GUIDELINES.md`](PROJECT_GUIDELINES.md) for full workflow and setup.
+
+## Verification Commands
+
 ```bash
-cd /home/raisebox/Projects/unitree-g1-gangnam-style/_vendor/unitree_mujoco_extras
-python3 launch_unitree_v3.py
+# Check Python environment
+source g1/bin/activate && python3 -c "import unitree_sdk2py; import mujoco; print('✅ venv OK')"
+
+# Check simulation files
+ls _vendor/unitree_mujoco/simulate_python/unitree_mujoco.py
+
+# Check RL policy
+ls _vendor/unitree_rl_gym/deploy/pre_train/g1/motion.pt
+
+# Check gamepad
+ls -la /dev/input/js*
 ```
-
-This launches 3 processes:
-1. MuJoCo simulator with G1 robot
-2. Odom/Mode/State bridge
-3. RL policy to LowCmd bridge
-
-### Manual Simulation (no RL policy)
-```bash
-cd /home/raisebox/Projects/unitree-g1-gangnam-style/_vendor/unitree_mujoco/simulate_python
-/home/raisebox/Projects/unitree-g1-gangnam-style/g1/bin/python3 unitree_mujoco.py
-```
-
-## Config Path Issue (KNOWN BUG)
-
-**Problem:** Config files have hardcoded paths pointing to `/home/simulations/` instead of your project location.
-
-**Affected files:**
-- `_vendor/unitree_rl_gym/deploy/deploy_mujoco/configs/g1_policy_only.yaml`
-- `_vendor/unitree_rl_gym/deploy/deploy_mujoco/configs/g1.yaml`
-
-**Fix:** Update `policy_path` and `xml_path` to:
-```
-/home/raisebox/Projects/unitree-g1-gangnam-style/_vendor/...
-```
-
-**Detection mechanism:** `launch_unitree_v3.py` (lines 26-46) auto-detects base directory by checking:
-1. `/home/simulations`
-2. `/home/user`
-3. Script's parent directory (your `_vendor/`)
 
 ## Common Commands
 
@@ -99,24 +60,9 @@ tail -f _vendor/unitree_mujoco/simulate_python/unitree_mujoco.log
 
 - **Simulation:** Working (physics verified, graphics issues resolved)
 - **Gamepad:** Detected (ZEROPLUS P4) but may need permissions
-- **RL Policy:** Exists at `_vendor/unitree_rl_gym/deploy/pre_train/g1/motion.pt`
-- **Config paths:** UPDATED to correct paths (Aug 14)
+- **RL Policy:** Located at `_vendor/unitree_rl_gym/deploy/pre_train/g1/motion.pt`
 - **Course Progress:** Ready to start Unit 3 SDK exercises
-
-## DO NOT
-
-- ❌ Modify robot code without simulation verification
-- ❌ Change hardcoded config paths without user confirmation
-- ❌ Delete files or repos (catastrophic deletion happened before)
-- ❌ Execute commands without user running them (trust issue)
-
-## DO
-
-- ✅ Test everything in simulation first
-- ✅ Save analysis outputs as files in `docs/`
-- ✅ Follow the 4-phase workflow in `PROJECT_GUIDELINES.md`
-- ✅ Ask before making destructive changes
-- ✅ Run verification commands before proceeding
+- **29DOF Models:** Available in `_vendor/unitree_rl_gym/resources/robots/g1_description/g1_29dof*.xml`
 
 ## Troubleshooting
 
@@ -137,13 +83,6 @@ tail -f _vendor/unitree_mujoco/simulate_python/unitree_mujoco.log
 **"GLXBadDrawable"**
 - NVIDIA driver/OpenGL issue
 - Switch to X11 or use virtual framebuffer
-
-## User Preferences
-
-- User runs all commands themselves (agent provides commands only)
-- User has 29DOF G1 robot
-- Keyboard layout: pt-PT
-- Tailscale: Working (raisebox-spark:8000 for vLLM)
 
 ---
 

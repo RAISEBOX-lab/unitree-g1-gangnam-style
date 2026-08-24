@@ -77,6 +77,12 @@ def get_gravity_orientation(quaternion: np.ndarray) -> np.ndarray:
     return g
 
 def load_policy(policy_path: str, device: torch.device):
+    import os
+    ext = os.path.splitext(policy_path)[1].lower()
+    if ext == ".onnx":
+        import onnxruntime as ort
+        sess = ort.InferenceSession(policy_path, providers=["CPUExecutionProvider"])
+        return sess
     try:
         pol = torch.jit.load(policy_path, map_location=device); pol.eval(); return pol
     except Exception:
@@ -85,7 +91,7 @@ def load_policy(policy_path: str, device: torch.device):
     if hasattr(obj, "eval"):
         obj.eval(); return obj
     if isinstance(obj, dict):
-        for k in ("policy","model","actor"):
+        for k in ("model", "policy", "actor", "model_state_dict"):
             if k in obj and hasattr(obj[k], "eval"):
                 obj[k].eval(); return obj[k]
     raise RuntimeError("Unsupported policy format")
@@ -166,6 +172,7 @@ def main():
     cmd_scale          = np.array(cfg["cmd_scale"], dtype=np.float32)
     num_actions        = int(cfg["num_actions"])  # 12 legs
     num_obs            = int(cfg["num_obs"])
+    history_length     = int(cfg.get("history_length", 1))
     cmd_init           = np.array(cfg["cmd_init"], dtype=np.float32)
     control_decimation = int(cfg["control_decimation"])
     simulation_dt      = float(cfg["simulation_dt"])
@@ -405,11 +412,18 @@ def main():
         except Exception as e:
             print(f"[RPC][WARN] Failed to init for service '{svc}': {e}")
 
-    # -------------------- AI LOOP (EXACT v9) --------------------
-    obs      = np.zeros(num_obs, dtype=np.float32)
+    # -------------------- AI LOOP --------------------
     action   = np.zeros(num_actions, dtype=np.float32)
     target_q = q0_legs.copy()
     cmd      = cmd_init.astype(np.float32)
+    
+    # Check if policy is ONNX
+    is_onnx = hasattr(policy, "run")
+    if is_onnx:
+        history_length = int(cfg.get("history_length", 5))
+        obs_history = np.zeros((history_length, num_obs), dtype=np.float32)
+    else:
+        obs = np.zeros(num_obs, dtype=np.float32)
 
     inner_dt = 1.0 / float(args.rate)
     ctr = 0
@@ -538,19 +552,49 @@ def main():
                             phase = (t % 0.8) / 0.8
                             sinp, cosp = math.sin(2.0*math.pi*phase), math.cos(2.0*math.pi*phase)
 
-                            # ---- EXACT v9 observation packing ----
-                            obs[0:3] = omega_s
-                            obs[3:6] = gravity
-                            obs[6:9] = cmd * cmd_scale
-                            obs[9:9+num_actions] = qj
-                            obs[9+num_actions:9+2*num_actions] = dqj
-                            obs[9+2*num_actions:9+3*num_actions] = action
-                            obs[9+3*num_actions:9+3*num_actions+2] = np.array([sinp, cosp], dtype=np.float32)
+                            # ---- Observation packing for ONNX (53 dims) ----
+                            # 0-2: base linear velocity (vx, vy, vz)
+                            # 3-5: base angular velocity (wx, wy, wz)
+                            # 6-8: projected gravity (gx, gy, gz)
+                            # 9-11: command (vx, vy, yaw_rate)
+                            # 12-23: joint positions (12 DOFs)
+                            # 24-35: joint velocities (12 DOFs)
+                            # 36-47: previous actions (12 DOFs)
+                            # 48-52: phase + base orientation (5 dims)
+                            obs_frame = np.zeros(num_obs, dtype=np.float32)
+                            
+                            # Get base linear velocity from IMU (approximate from cmd or state)
+                            # For now, use cmd as proxy for desired velocity
+                            base_lin_vel = cmd.copy()  # vx, vy, vz from cmd
+                            
+                            obs_frame[0:3] = base_lin_vel * cmd_scale  # base linear velocity
+                            obs_frame[3:6] = omega_s  # base angular velocity
+                            obs_frame[6:9] = gravity  # projected gravity
+                            obs_frame[9:12] = cmd * cmd_scale  # command
+                            obs_frame[12:12+num_actions] = qj  # joint positions
+                            obs_frame[12+num_actions:12+2*num_actions] = dqj  # joint velocities
+                            obs_frame[12+2*num_actions:12+3*num_actions] = action  # previous actions
+                            obs_frame[12+3*num_actions:12+3*num_actions+3] = np.array([sinp, cosp, 0.0], dtype=np.float32)  # phase + padding
 
-                            with torch.no_grad():
-                                out = policy(torch.from_numpy(obs).to(device).unsqueeze(0))
-                                if isinstance(out, (tuple, list)): out = out[0]
-                                action[:] = out.detach().cpu().numpy().squeeze().astype(np.float32)
+                            if is_onnx:
+                                # Update history
+                                obs_history = np.roll(obs_history, -1, axis=0)
+                                obs_history[-1] = obs_frame
+                                
+                                # Flatten history for ONNX input
+                                obs_input = obs_history.flatten()
+                                
+                                # ONNX inference
+                                onnx_input_name = policy.get_inputs()[0].name
+                                out = policy.run(None, {onnx_input_name: obs_input.reshape(1, -1).astype(np.float32)})[0]
+                                action[:] = out.squeeze().astype(np.float32)
+                            else:
+                                # TorchScript inference (legacy)
+                                obs = obs_frame
+                                with torch.no_grad():
+                                    out = policy(torch.from_numpy(obs).to(device).unsqueeze(0))
+                                    if isinstance(out, (tuple, list)): out = out[0]
+                                    action[:] = out.detach().cpu().numpy().squeeze().astype(np.float32)
                             target_q[:num_actions] = action * action_scale + q0_legs
 
                         q_targets = [0.0]*CONTROLLED_DOF
