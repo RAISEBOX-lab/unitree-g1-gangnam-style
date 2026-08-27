@@ -1,5 +1,5 @@
 # 
-policy_path: "/home/raisebox/Projects/unitree-g1-gangnam-style/velocity_v28_iter44000/policy.onnx"
+policy_path: "/home/raisebox/Projects/unitree-g1-gangnam-style/archive/velocity_v28_iter44000/policy.onnx"
 
 # Simulation time step
 simulation_dt: 0.002

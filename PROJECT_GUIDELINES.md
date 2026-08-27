@@ -28,12 +28,19 @@ Execute the "Unitree G1 Reinforcement Learning Course" to enable the Unitree G1 
 
 - **Repo**: Initialized at `/home/raisebox/Projects/unitree-g1-gangnam-style`
 - **Course Doc**: `Unitree G1 Reinforcement Learning Course.docx` (415MB)
-- **Submodules**:
-  - `_vendor/unitree_sdk2_python` - Python SDK for DDS (GitHub)
-  - `_vendor/unitree_mujoco` - MuJoCo simulator (GitHub, 29DOF)
+- **Submodules** (forks under `RAISEBOX-lab`, branch `raisebox-fixes`):
+  - `_vendor/unitree_sdk2_python` - Python SDK for DDS
+  - `_vendor/unitree_mujoco` - MuJoCo simulator (29DOF, C++ + Python), PS4 gamepad fix
   - `_vendor/unitree_mujoco_extras` - RPC bridge, gamepad GUI (third-party)
+  - `_vendor/unitree_rl_lab` - Isaac Lab tasks (G1-29dof Velocity, Gangnam mimic) + C++ deploy
+- **Vendored as plain files** (tracked directly, not submodules):
   - `_vendor/unitree_mujoco_tc` - Course repo (Bitbucket, 23DOF)
-  - `_vendor/unitree_rl_gym` - RL training/deployment (Bitbucket)
+  - `_vendor/unitree_rl_gym` - Course RL deploy scripts (Bitbucket)
+- **Local checkouts, not in git** (see `docs/STATUS_REPORT.md` for setup):
+  - `_vendor/IsaacLab` - tag `v2.3.0` (Isaac Sim 5.1.0, Python 3.11 venv)
+  - `_vendor/unitree_sdk2` - C++ SDK, installed to `/opt/unitree_robotics`
+  - `_vendor/unitree_model` - G1 29dof USD assets (HF `unitreerobotics/unitree_model`)
+  - `archive/` - third-party reference policies (see `archive/README.md`)
 - **Gangnam Motion**: Located at `_vendor/unitree_rl_gym/deploy/pre_train/g1/motion.pt`
 - **29DOF Models**: `_vendor/unitree_rl_gym/resources/robots/g1_description/g1_29dof*.xml`
 
@@ -41,7 +48,7 @@ Execute the "Unitree G1 Reinforcement Learning Course" to enable the Unitree G1 
 
 ## 4-Phase Workflow
 
-### Phase 1: Environment Setup (CURRENT)
+### Phase 1: Environment Setup (DONE)
 Set up all dependencies and verify simulation works:
 1. ✅ Clone official course repos from Bitbucket
 2. ✅ Set up Python environment with all dependencies
@@ -58,7 +65,7 @@ Complete all Unitree SDK exercises in order:
 5. **Exercise 5**: Arm SDK PreRecorded Movements
 6. **Exercise 6**: Arm SDK Capture Movements
 
-### Phase 3: RL Lab Exercises (Unit 4-5)
+### Phase 3: RL Lab Exercises (Unit 4-5) (CURRENT)
 Complete RL simulation and deployment exercises:
 1. **Exercise 7**: Sim2Sim Setup - Full pipeline with RL policy
 2. **Exercise 8**: Policy Deployment - RL policy in MuJoCo
@@ -88,11 +95,15 @@ After mastering all exercises:
 ### Submodules
 ```
 _vendor/
-├── unitree_sdk2_python/   # Python SDK for DDS
-├── unitree_mujoco/        # MuJoCo simulator (29DOF)
-├── unitree_mujoco_extras/ # RPC bridge, gamepad GUI
-├── unitree_mujoco_tc/     # Course repo (23DOF)
-└── unitree_rl_gym/        # RL training/deployment
+├── unitree_sdk2_python/   # Python SDK for DDS            (submodule)
+├── unitree_mujoco/        # MuJoCo simulator (29DOF)      (submodule)
+├── unitree_mujoco_extras/ # RPC bridge, gamepad GUI       (submodule)
+├── unitree_rl_lab/        # Isaac Lab tasks + C++ deploy  (submodule)
+├── unitree_mujoco_tc/     # Course repo (23DOF)           (plain files)
+├── unitree_rl_gym/        # Course RL deploy scripts      (plain files)
+├── IsaacLab/              # v2.3.0                        (local, not in git)
+├── unitree_sdk2/          # C++ SDK                       (local, not in git)
+└── unitree_model/         # G1 USD assets                 (local, not in git)
 ```
 
 ---
@@ -129,10 +140,12 @@ unitree-g1-gangnam-style/
 │   ├── unitree_sdk2_python/    # Python SDK for DDS
 │   ├── unitree_mujoco/          # MuJoCo simulator
 │   ├── unitree_mujoco_extras/   # RPC bridge, gamepad GUI
+│   ├── unitree_rl_lab/          # Isaac Lab tasks + C++ deploy
 │   ├── unitree_mujoco_tc/       # Course repo (23DOF)
-│   └── unitree_rl_gym/          # RL training/deployment
+│   └── unitree_rl_gym/          # Course RL deploy scripts
 ├── scripts/                     # User scripts (exercise implementations)
-├── g1/                          # Python virtual environment
+├── archive/                     # Third-party reference policies (binaries git-ignored)
+├── g1/                          # Python virtual environment (py3.11, Isaac Lab)
 ├── docs/                        # Analysis documents
 └── requirements.txt             # Python dependencies
 ```
@@ -159,7 +172,7 @@ unitree-g1-gangnam-style/
 
 ---
 
-*Last updated: 2026-08-14*
+*Last updated: 2026-08-24*
 
 ---
 
@@ -202,12 +215,13 @@ See Unit 3 of the course for simulation setup.
 
 ✅ **Completed:**
 - Git repo initialized
-- Submodules cloned: `unitree_sdk2_python`, `unitree_mujoco`, `unitree_mujoco_extras`, `unitree_mujoco_tc`, `unitree_rl_gym`
+- Submodules: `unitree_sdk2_python`, `unitree_mujoco`, `unitree_mujoco_extras`, `unitree_rl_lab`; vendored: `unitree_mujoco_tc`, `unitree_rl_gym`
+- Isaac Lab 2.3.0 + unitree_rl_lab installed; C++ sim2sim pipeline built and verified (2026-08-24)
 - Python venv created (`g1/`)
 - Dependencies installed and verified
 - `scripts/` directory created
 
-📋 **Next:** Unit 3 - Unitree SDK exercises
+📋 **Next:** Phase 3 — train the velocity policy, then the Gangnam mimic task (see `docs/STATUS_REPORT.md`)
 
 ---
 

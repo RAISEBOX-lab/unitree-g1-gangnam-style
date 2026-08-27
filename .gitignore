@@ -1,9 +1,6 @@
 # Virtual environment
 g1/
 
-# Dependencies
-requirements.txt
-
 # Python
 __pycache__/
 *.py[cod]
@@ -42,3 +39,6 @@ _vendor/unitree_mujoco/simulate/mujoco/
 _vendor/unitree_model/.cache/
 MUJOCO_LOG.TXT
 *.log
+
+# Transfer scratch (policies copied from other machines)
+incoming/
