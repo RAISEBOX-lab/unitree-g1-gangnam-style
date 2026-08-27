@@ -58,11 +58,12 @@ tail -f _vendor/unitree_mujoco/simulate_python/unitree_mujoco.log
 
 ## Current State
 
-- **Simulation:** Working (physics verified, graphics issues resolved)
-- **Gamepad:** Detected (ZEROPLUS P4) but may need permissions
-- **RL Policy:** Located at `_vendor/unitree_rl_gym/deploy/pre_train/g1/motion.pt`
-- **Course Progress:** Ready to start Unit 3 SDK exercises
-- **29DOF Models:** Available in `_vendor/unitree_rl_gym/resources/robots/g1_description/g1_29dof*.xml`
+- **Simulation:** Python sim (course) working; C++ sim2sim pipeline (`unitree_rl_lab` `g1_ctrl` + C++ `unitree_mujoco`) built and verified 2026-08-24
+- **Gamepad:** REV-31-2983 ("ZEROPLUS P4") on `/dev/input/js0`, PS4 layout added to the simulator; verify with `python scripts/js_probe.py`
+- **Training:** Isaac Lab 2.3.0 in the `g1` venv (Python 3.11); `Unitree-G1-29dof-Velocity` training in progress, `Unitree-G1-29dof-Mimic-Gangnanm-Style` ready
+- **RL Policy (course):** `_vendor/unitree_rl_gym/deploy/pre_train/g1/motion.pt`
+- **29DOF Models:** `_vendor/unitree_rl_gym/resources/robots/g1_description/g1_29dof*.xml`
+- **Details:** `docs/STATUS_REPORT.md` (sim2sim setup, commands), `PROJECT_GUIDELINES.md` (workflow, repo layout)
 
 ## Troubleshooting
 
@@ -86,4 +87,4 @@ tail -f _vendor/unitree_mujoco/simulate_python/unitree_mujoco.log
 
 ---
 
-*Last updated: 2026-08-14*
+*Last updated: 2026-08-24*

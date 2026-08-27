@@ -29,21 +29,22 @@ Implement Gangnam Style dance choreography on Unitree G1 robot using MuJoCo simu
 
 ## Problems Identified
 
-### 1. Elastic Band Enabled (FIXED)
-**Issue:** `ENABLE_ELASTIC_BAND = True` was holding robot in place  
-**Fix:** Changed to `ENABLE_ELASTIC_BAND = False`  
-**Status:** ✅ Fixed
+### 1. Elastic Band Enabled (RESOLVED — band re-enabled)
+**Issue:** `ENABLE_ELASTIC_BAND = True` appeared to hold the robot in place  
+**Root cause:** the real lock came from `rt/lowcmd` being applied before any FSM was set (see #5)  
+**Current setting:** `ENABLE_ELASTIC_BAND = True` again (needed to hang the robot before stand-up); the `fsm_set` gate (#5) is what prevents the lock  
+**Status:** ✅ Resolved
 
 ### 2. Missing mj_forward() (FIXED)
 **Issue:** Robot position not initialized after loading model  
 **Fix:** Added `mujoco.mj_forward(mj_model, mj_data)` after creating mj_data  
 **Status:** ✅ Fixed
 
-### 3. Typo in Sensor Detection (NOT FIXED)
+### 3. Typo in Sensor Detection (FIXED 2026-08-24)
 **Issue:** `have_imu_` vs `have_imu` (trailing underscore typo)  
 **Location:** `unitree_sdk2py_bridge.py:55-57`  
 **Impact:** IMU data not read from sensors  
-**Status:** ⚠️ Identified, not fixed (doesn't affect physics)
+**Status:** ✅ Fixed in the `unitree_mujoco` fork (branch `raisebox-fixes`, commit `fc97c71`)
 
 ### 4. RPC Bridge Sends LockedStanding on Startup (PARTIALLY FIXED)
 **Issue:** RPC bridge sends LockedStanding (kp=120) immediately on startup  
@@ -60,10 +61,10 @@ Implement Gangnam Style dance choreography on Unitree G1 robot using MuJoCo simu
 
 ## Solutions Implemented
 
-### Solution 1: Disable Elastic Band
+### Solution 1: Elastic Band + FSM gate
 **File:** `simulate_python/config.py`
 ```python
-ENABLE_ELASTIC_BAND = False  # Was True
+ENABLE_ELASTIC_BAND = True   # keep the band; the fsm_set gate below prevents the lock
 ```
 
 ### Solution 2: Initialize Position
@@ -126,7 +127,7 @@ if glfw.glfwKeyPressed(viewer.window, glfw.KEY_E):
 ## Files Modified
 
 ### unitree_mujoco/simulate_python/config.py
-- `ENABLE_ELASTIC_BAND = False`
+- `ROBOT = "g1"`, `ROBOT_SCENE = scene_29dof.xml`, `ENABLE_ELASTIC_BAND = True`, `USE_JOYSTICK = 0`
 
 ### unitree_mujoco/simulate_python/unitree_mujoco.py
 - Added `import mujoco.glfw.glfw as glfw`
@@ -174,23 +175,7 @@ python3 example_use_lococlient_simversion_v2.py lo 1
 ## Known Issues
 
 ### 1. Typo in Sensor Detection
-**File:** `unitree_sdk2py_bridge.py:55-57`
-```python
-# WRONG:
-if name == "imu_quat":
-    self.have_imu_ = True  # Has trailing underscore
-if name == "frame_pos":
-    self.have_frame_sensor_ = True  # Has trailing underscore
-
-# SHOULD BE:
-if name == "imu_quat":
-    self.have_imu = True  # No trailing underscore
-if name == "frame_pos":
-    self.have_frame_sensor = True  # No trailing underscore
-```
-
-**Impact:** IMU data not read from sensors  
-**Status:** Not critical for physics, can be fixed later
+**Status:** ✅ Fixed 2026-08-24 (`have_imu`, `have_frame_sensor`), see Problem #3 above
 
 ### 2. RPC Bridge Sends Commands on Startup
 **Issue:** RPC bridge sends LockedStanding immediately  
@@ -201,12 +186,60 @@ if name == "frame_pos":
 
 ## Next Steps
 
-1. **Test the fix:** Run simulation and verify robot falls
-2. **Test drag:** Verify mouse drag works before pressing 'E'
-3. **Test FSM:** Press 'E' and verify FSM commands work
-4. **Fix typo:** Correct `have_imu_` → `have_imu` (optional)
-5. **Proceed to Gangnam:** Start implementing dance choreography
+1. **Velocity policy:** continue `Unitree-G1-29dof-Velocity` training (resume from `2026-08-24_15-17-54/model_300.pt`), re-export with `play.py`, re-test in MuJoCo
+2. **Reference check:** run Unitree's bundled `config/policy/velocity/v0` through the same sim2sim chain to see a finished policy
+3. **Gangnam:** train `Unitree-G1-29dof-Mimic-Gangnanm-Style` (note the typo in the task id) and run it via the `Mimic_Gangnam_Style` FSM state (`L2` held 2 s + D-pad Left from Velocity mode)
 
 ---
 
-*Last updated: 2026-08-17*
+## Sim2sim Setup — unitree_rl_lab C++ pipeline (2026-08-24)
+
+The Python simulator above is the course (Unit 3) path. Policies trained in Isaac Lab are tested with
+Unitree's C++ pipeline instead:
+
+```
+Isaac Lab checkpoint (.pt) ─ play.py ─► exported/policy.onnx + params/deploy.yaml
+        └─► g1_ctrl (C++ FSM + ONNX Runtime) ◄─ DDS on lo ─► unitree_mujoco (C++ sim, 29-DOF G1, gamepad)
+```
+
+### Build (done on this machine)
+```bash
+sudo apt install -y libyaml-cpp-dev libboost-all-dev libeigen3-dev libspdlog-dev libfmt-dev libglfw3-dev
+# unitree_sdk2 (C++) -> /opt/unitree_robotics
+cd _vendor && git clone https://github.com/unitreerobotics/unitree_sdk2.git && cd unitree_sdk2
+mkdir -p build && cd build && cmake .. -DBUILD_EXAMPLES=OFF && sudo make install
+# MuJoCo release inside the C++ simulator (3.3.6: https://github.com/google-deepmind/mujoco/releases/tag/3.3.6)
+cd _vendor/unitree_mujoco/simulate && tar xzf mujoco-3.3.6-linux-x86_64.tar.gz && mv mujoco-3.3.6 mujoco
+mkdir -p build && cd build && cmake .. && make -j$(nproc)
+# controller
+cd _vendor/unitree_rl_lab/deploy/robots/g1_29dof && mkdir -p build && cd build && cmake .. && make -j$(nproc)
+```
+Fixes applied (in the `RAISEBOX-lab/unitree_mujoco` fork): `#include <cstdint>` in `jstest.cc` (GCC 13);
+new `PS4Joystick` layout in `physics_joystick.h` (`joystick_type: "ps4"`) for the REV-31-2983 /
+"ZEROPLUS P4" pad — axes 0/1 LX/LY, 2 RX, 3 L2, 4 R2, 5 RY, 6/7 D-pad; buttons 0 □, 1 ✕, 2 ○, 3 △, 4 L1, 5 R1, 8 Share, 9 Options
+(verified with `scripts/js_probe.py`).
+
+### Config
+- `_vendor/unitree_mujoco/simulate/config.yaml`: `robot: g1`, `scene_29dof.xml`, `domain_id: 0`, `interface: lo`, `use_joystick: 1`, `joystick_type: ps4`, `enable_elastic_band: 1`
+- `_vendor/unitree_rl_lab/deploy/robots/g1_29dof/config/config.yaml`: `Velocity.policy_dir: ../../../logs/rsl_rl/unitree_g1_29dof_velocity` (newest run containing `exported/` is used)
+
+### Run
+```bash
+# T1
+cd _vendor/unitree_mujoco/simulate/build && ./unitree_mujoco
+# T2  (--network lo is required: the default binds the LAN interface and never sees the sim)
+cd _vendor/unitree_rl_lab/deploy/robots/g1_29dof/build && ./g1_ctrl --network lo
+```
+PS4 chords: `L2 + D-pad Up` → FixStand · MuJoCo window key `8` → lower to floor · `R1 + □` → Velocity policy ·
+key `9` → release band · left stick → walk · `L2 + ○` → Passive.
+
+### Train / export (venv `g1`, `OMNI_KIT_ACCEPT_EULA=YES`, from `_vendor/unitree_rl_lab`)
+```bash
+python scripts/rsl_rl/train.py --task Unitree-G1-29dof-Velocity --headless --num_envs 2048 [--resume --load_run <run> --checkpoint model_N.pt]
+python scripts/rsl_rl/play.py  --task Unitree-G1-29dof-Velocity --headless --num_envs 1 --checkpoint logs/rsl_rl/unitree_g1_29dof_velocity/<run>/model_N.pt   # writes <run>/exported/policy.onnx, then Ctrl+C
+```
+Checkpoints every 100 iterations (~9.6 MB each); ~2.3 s/iteration at 2048 envs on the RTX 5060 8 GB.
+
+---
+
+*Last updated: 2026-08-24*
