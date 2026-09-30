@@ -198,6 +198,31 @@ The build order follows the project rule: nothing touches the real robot until i
 
 ---
 
+## Wiring
+
+Neither ESP needs a custom PCB. The ESP32-C3 SuperMini is a complete board with USB-C, a voltage regulator and an antenna.
+
+**Receiver (on the robot):** no wiring. It plugs straight into a PC2 USB port.
+
+**Transmitter (in the button box):**
+
+```
+button NC terminal ──── GPIO4 on the SuperMini
+button NC terminal ──── GND on the SuperMini
+USB-C from the wall adapter ──── SuperMini USB-C port (power)
+```
+
+- **No resistors.** The code turns on the ESP32's internal pull-up.
+- **Solder the two wires straight into the GPIO4 and GND holes.** It's the simplest and most secure option. Header pins with push-on jumper wires avoid soldering to the board, but jumpers can work loose.
+- **Which pin:** GPIO4 is safe. Avoid GPIO2, 8 and 9. They affect how the board starts up, and GPIO9 is also the BOOT button.
+- **Mounting:**
+  - Fix the board with double-sided foam tape or hot glue so it can't rattle.
+  - Keep it clear of the button's metal screw terminals, or insulate it with tape or heat-shrink.
+  - Leave slack in the USB cable and route it through the box's cable entry.
+- **No soldering at all:** SuperMini expansion boards with screw terminals exist. For two wires, soldering is simpler and more reliable.
+
+---
+
 ## Bill of materials
 
 About €28 in total. Prices are rough estimates, not quotes, and the links haven't been checked for stock.
